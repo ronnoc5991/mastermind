@@ -1,17 +1,8 @@
 =begin
--eventually, allow the human to make the code
 -computer will guess randomly at first but keeping the code bits that match
 -if the computer guesses the right color in the wrong position, its next guess
   will include that color somewhere
-  -code is made up of 4 different colors (selected from 6 different possible colored pegs)
 =end
-
-#red, blue, yellow, purple, green, orange
-
-#twelve guesses max
-
-#system to calculate if the colors are correct or in the right spot
-# and print out the results
 
 class Game
 
@@ -21,17 +12,48 @@ class Game
     def initialize
         puts "Initalizing".center($line_width)
         puts
-        makes_secret_code
-        enter_the_game
+        what_will_the_player_do
     end
 
-    def makes_secret_code
+    def what_will_the_player_do
+        puts
+        puts "Would you like to guess or make the code?".center($line_width)
+        puts
+        puts "Press 1 to be the guesser.....Press 2 to be the codemaker.".center($line_width)
+        puts
+        decision = gets.chomp
+        if decision == "1"
+            computer_makes_code
+        elsif decision == "2"
+            player_makes_code
+        else 
+            puts "Something went wrong.  Please enter either 1 or 2.".center($line_width)
+        end
+    end
+
+    def computer_makes_code
+        @computer_made = true
         @secret_code = [" ", " ", " ", " "]
         @secret_code.map! do |color|
             color = $colors[(rand(6)-1)]
         end
         count_secret_code
-        print @secret_code #TAKE THIS OUT BEFORE FINAL VERSION
+        enter_the_game
+    end
+
+    def player_makes_code
+        @computer_made = false
+        @secret_code = [" ", " ", " ", " "]
+        i = 1
+        @secret_code.map! do |color|
+            puts "What would you like slot #{i} to be?".center($line_width)
+            i += 1
+            color = gets.chomp
+                #if input == "blue" || input == "yellow" || input == "red" || input == "purple" || input == "green" || input == "orange"
+                #    color = input
+        end
+        count_secret_code
+        enter_the_game
     end
 
     def count_secret_code
@@ -45,22 +67,66 @@ class Game
 
     def enter_the_game #needs to have game over checker built in.. loop until game over
         @guess_count = 1
-        until game_over do
-            self.get_guess
-            self.check_guess
-            game_over
-            @guess_count += 1
+        if @computer_made
+            until @game_over do
+                self.get_player_guess
+                self.check_guess
+                game_over
+                @guess_count += 1
+            end
+        elsif @computer_made == false
+            until @game_over do
+                self.get_computer_guess
+                self.check_guess
+                game_over
+                @guess_count += 1
+            end
         end
+    end
+
+    def get_computer_guess #this is still unsofisticated (random guessing)... should adjust strategy based on success of last guess
+        @current_guess = ["____", "____", "____", "____"]
+        @current_guess.map! do |color|
+            color = $colors[(rand(6)-1)]
+        end
+        puts "----------------------------------------------------------------------------------------------".center($line_width)
+        puts "|                                          Guess #{@guess_count}                                           |".center($line_width)
+        puts "----------------------------------------------------------------------------------------------".center($line_width)
+        puts
+        puts
+        puts "--------------Secret-Code--------------".center($line_width)
+        puts "|      #{@secret_code.join(" | ")}      |".center($line_width)
+        puts "----------------------------------------".center($line_width)
+        puts
+        puts "-------------Computer-Guess-------------".center($line_width)
+        puts "|      #{@current_guess.join(" | ")}      |".center($line_width)
+        puts "----------------------------------------".center($line_width)
+        puts
+        #if @exactly_correct > 0
+
+        #-computer will guess randomly at first but keeping the code bits that match
+        #-if the computer guesses the right color in the wrong position, its next guess
+        #will include that color somewhere
     end
 
     def game_over
         @game_over = false
-        if @guess_count == 13 || @exactly_correct == 4
+        if @guess_count == 12 || @exactly_correct == 4
             @game_over = true
-        end #needs to account for correct guess on guess 12
+            puts "GAME OVER".center($line_width)
+            puts
+                if @exactly_correct == 4 && @computer_made == true
+                    puts "You guessed the secret code in #{@guess_count} guesses!".center($line_width)
+                elsif @exactly_correct == 4 && @computer_made == false
+                    puts "The computer guessed your code in #{@guess_count} guesses!".center($line_width)
+                else
+                    puts "The secret code was not guessed!".center($line_width)
+                end
+                puts
+        end
     end
 
-    def get_guess
+    def get_player_guess
         @current_guess = ["____", "____", "____", "____"] #resets current guess for display purposes
         puts
         puts "----------------------------------------------------------------------------------------------".center($line_width)
@@ -109,29 +175,29 @@ class Game
         secret_colors = @secret_colors
         i = 0
         @exactly_correct = 0
-        inexactly_correct = 0
+        @inexactly_correct = 0
         while i < 4 do #checks for exact matches
             if @secret_code[i] == @current_guess[i]
                 @exactly_correct += 1
                 case @secret_code[i]
                 when "blue"
                     secret_colors["blue"] -= 1
-                    blue -= 1
+                    guess_colors["blue"] -= 1
                 when "yellow"
                     secret_colors["yellow"] -= 1
-                    yellow -= 1
+                    guess_colors["yellow"] -= 1
                 when "red"
                     secret_colors["red"] -= 1
-                    red -= 1
+                    guess_colors["red"] -= 1
                 when "purple"
                     secret_colors["purple"] -= 1
-                    purple -= 1
+                    guess_colors["purple"] -= 1
                 when "green"
                     secret_colors["green"] -= 1
-                    green -= 1
+                    guess_colors["green"] -= 1
                 when "orange"
                     secret_colors["orange"] -= 1
-                    orange -= 1
+                    guess_colors["orange"] -= 1
                 end
             end
             i += 1
@@ -141,7 +207,7 @@ class Game
             if (guess_colors[$colors[y]] > 0) && (secret_colors[$colors[y]] > 0) #if both the guess and the real code have this color
                 #until loop take these varibale to 0
                 until guess_colors[$colors[y]] == 0 || secret_colors[$colors[y]] == 0
-                    inexactly_correct += 1
+                    @inexactly_correct += 1
                     guess_colors[$colors[y]] -= 1
                     secret_colors[$colors[y]] -= 1
                 end
@@ -149,9 +215,9 @@ class Game
             y += 1
         end
         puts "----------------------------------------------------------------------------------------------".center($line_width)
-        puts "|                 #{@exactly_correct} of your guesses are correct in both color and position.                  |".center($line_width)
+        puts "|                   #{@exactly_correct} of guesses are correct in both color and position.                     |".center($line_width)
         puts "|                                                                                            |".center($line_width)
-        puts "|                 #{inexactly_correct} of your guesses are correct in color but not position.                   |".center($line_width)
+        puts "|                   #{@inexactly_correct} of guesses are correct in color but not position.                      |".center($line_width)
         puts "----------------------------------------------------------------------------------------------".center($line_width)
         puts
     end
